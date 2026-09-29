@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Delitto in Filiale</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Caveat:wght@500;700&family=Courier+Prime:wght@400;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--ink:#1F1A14;--paper:#FBF7EE;--paper2:#F3EBDD;--cork:#B88A5A;--red:#B3261E;--blue:#1D3557;--post:#F6E27A;--pink:#F2C4BE;--mist:#DCE3EA;--muted:#5A4632;--shadow:0 3px 8px rgba(40,20,5,.35)}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font-family:"Courier Prime","Courier New",monospace;color:var(--ink);background-color:var(--cork);
+  background-image:radial-gradient(rgba(70,40,15,.22) 1px,transparent 1.4px),radial-gradient(rgba(255,235,200,.18) 1px,transparent 1.4px);
+  background-size:9px 9px,13px 13px;background-position:0 0,4px 6px}
+button,input,select{font-family:inherit;color:inherit;font-size:inherit}
+button{cursor:pointer}
+button:disabled{cursor:default;opacity:.55}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.type{font-family:"Special Elite","Courier New",monospace}
+.hand{font-family:"Caveat",cursive}
+.paper{background:var(--paper);box-shadow:var(--shadow);position:relative}
+.pin::before{content:"";position:absolute;top:-7px;left:50%;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--red);box-shadow:0 2px 3px rgba(0,0,0,.4)}
+.wrap{max-width:1600px;margin:0 auto;padding:24px;display:flex;flex-direction:column;gap:18px}
+.label{font-family:"Special Elite",monospace;font-size:17px;color:var(--paper);letter-spacing:1px;margin:4px 0 -4px}
+.btn{border:1.5px solid var(--ink);background:var(--paper);padding:8px 14px;min-height:44px}
+.stamp{border:4px double var(--red);background:var(--paper);color:var(--red);font-family:"Special Elite",monospace;letter-spacing:2px;box-shadow:var(--shadow)}
+.plan{background-color:#EEF1F4;background-image:linear-gradient(rgba(40,80,140,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(40,80,140,.10) 1px,transparent 1px);background-size:16px 16px}
+.postit{position:relative;border:none;text-align:left;padding:10px 12px 9px;box-shadow:var(--shadow)}
+.postit .tag{font-size:11.5px;letter-spacing:.5px;color:#4A3A28}
+.postit .txt{font-family:"Caveat",cursive;font-size:21px;line-height:1.08;margin-top:2px}
+.postit .mark{position:absolute;right:5px;bottom:5px;border:2px solid var(--red);color:var(--red);font-family:"Special Elite",monospace;font-size:11px;padding:1px 4px;transform:rotate(-8deg);background:rgba(251,247,238,.85)}
+.postit .mark.ok{border-color:#2E6B45;color:#2E6B45}
+.cross{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:12px 18px;box-shadow:var(--shadow);z-index:50;max-width:90vw}
+.overlay{position:fixed;inset:0;background:rgba(29,53,87,.55);display:flex;align-items:center;justify-content:center;z-index:40;padding:20px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* home */
+.home{max-width:960px;margin:0 auto;padding:48px 24px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}
+.home h1{grid-column:1/-1;margin:0}
+@media (max-width:760px){.home{grid-template-columns:1fr}}
+
+/* detective */
+.det-head{display:flex;gap:18px;align-items:stretch;flex-wrap:wrap}
+.det-grid{display:grid;grid-template-columns:340px minmax(0,1fr) 300px;gap:22px;align-items:start}
+@media (max-width:1250px){.det-grid{grid-template-columns:320px minmax(0,1fr)}.det-right{grid-column:1/-1}}
+.rooms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:3px solid var(--blue)}
+.room-btn{height:88px;border:1.5px solid var(--blue);text-align:left;padding:10px 12px;display:flex;flex-direction:column;justify-content:space-between}
+.sus-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+.card-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+@media (max-width:1000px){.sus-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.polaroid{position:relative;background:var(--paper);border:none;padding:8px 8px 10px;box-shadow:var(--shadow);text-align:center}
+.tape{position:absolute;top:44px;left:-6px;right:-6px;background:#F2E6A6;border:1px solid #C9B75E;font-family:"Special Elite",monospace;font-size:15px;letter-spacing:3px;padding:4px 0;transform:rotate(-8deg)}
+.clues{display:flex;flex-direction:column;gap:12px;padding:4px 4px 12px}
+
+/* creator */
+.cr-grid{display:grid;grid-template-columns:minmax(0,1fr) 520px;gap:20px;align-items:start}
+@media (max-width:1250px){.cr-grid{grid-template-columns:1fr}}
+.cr-rooms{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:3px solid var(--blue)}
+.cr-room{border:1.5px solid var(--blue);min-height:330px;display:flex;flex-direction:column}
+.cr-room-head{border:none;border-bottom:1.5px dashed var(--blue);background:transparent;padding:8px 10px;text-align:left;display:flex;justify-content:space-between;align-items:center;min-height:44px}
+.cr-clues{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:8px;align-content:start}
+.cr-clues .postit{padding:6px 8px 7px}
+.cr-clues .postit .txt{font-size:18px}
+.cr-clues .postit .tag{font-size:10.5px}
+.badge{color:#fff;font-size:10.5px;letter-spacing:1px;padding:3px 7px;border-radius:10px;white-space:nowrap}
+.pick{background:var(--paper);border:2px solid #D9D2C3;padding:6px 10px;text-align:left;box-shadow:0 2px 5px rgba(40,20,5,.3);display:flex;justify-content:space-between;gap:8px;align-items:center;min-height:40px}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+/* ============ CONFIGURAZIONE ============ */
+const SUPABASE_URL = 'https://fxnfaotahrlmmrundkib.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4bmZhb3RhaHJsbW1ydW5ka2liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2ODY1NTYsImV4cCI6MjEwNjI2MjU1Nn0.ZV9VsV2PLNtvrwmKNzeFFkDnKlXH7oo6c_jB0h5D6CY';
+/* ======================================== */
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const $app = document.getElementById('app');
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const byId = (list, id) => list.find(x => x.id === id);
+const first = n => n.split(' ')[0];
+const o = p => p.g === 'f' ? 'a' : 'o';
+function toast(msg) {
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; t.setAttribute('role', 'status');
+  document.body.appendChild(t); setTimeout(() => t.remove(), 3500);
+}
+function rotFor(i) { return [-1.6, 1.1, -0.6, 1.8, -1.1, 0.8][i % 6]; }
+const CROSS = '<svg class="cross" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="6" y1="6" x2="94" y2="94" stroke="#B3261E" stroke-width="3"/><line x1="94" y1="6" x2="6" y2="94" stroke="#B3261E" stroke-width="3"/></svg>';
+
+/* ============ DATI DEL GIOCO ============ */
+const SUS = [
+  { id: 's1', g: 'f', name: 'Ornella Bartolucci', role: 'Direttrice', shoe: 'piccola', sx: false, smoke: true, hair: 'grigio', color: '#A4A4A4' },
+  { id: 's2', g: 'm', name: 'Gianluca Ferrante', role: 'Vicedirettore', shoe: 'grande', sx: true, smoke: false, hair: 'grigio', color: '#A4A4A4' },
+  { id: 's3', g: 'f', name: 'Sonia Pieri', role: 'Gestore Valore', shoe: 'piccola', sx: true, smoke: false, hair: 'scuro', color: '#3B2A1E' },
+  { id: 's4', g: 'm', name: 'Walter Cocchi', role: 'Cassiere', shoe: 'grande', sx: false, smoke: true, hair: 'scuro', color: '#3B2A1E' },
+  { id: 's5', g: 'f', name: 'Veronica Galli', role: 'Gestore Premium', shoe: 'media', sx: false, smoke: false, hair: 'biondo', color: '#E2B845' },
+  { id: 's6', g: 'm', name: 'Tommaso Rinaldi', role: 'Gestore Premium', shoe: 'media', sx: true, smoke: true, hair: 'biondo', color: '#E2B845' }
+];
+const HAIR_PL = { grigio: 'grigi', scuro: 'scuri', biondo: 'biondi' };
+const ROOMS = [
+  { id: 'salone', name: 'Salone' }, { id: 'casse', name: 'Area casse' }, { id: 'direzione', name: 'Direzione' },
+  { id: 'premium', name: 'Uffici premium' }, { id: 'caveau', name: 'Caveau' }, { id: 'archivio', name: 'Archivio' }
+];
+const WEA = [
+  { id: 'w1', name: 'Cassetto del bancomat', wound: 'contusione', trace: 'sangue', origin: 'casse', clue: 'Schizzi di sangue sul pavimento', missing: 'ATM con il vano del cassetto aperto', autopsy: 'contusione alla nuca, colpo secco e pesante.' },
+  { id: 'w2', name: 'Tagliacarte', wound: 'taglio', trace: 'sangue', origin: 'direzione', clue: 'Gocce di sangue vicino alla porta', missing: 'Portapenne della Direzione senza tagliacarte', autopsy: 'ferita da taglio, lama corta.' },
+  { id: 'w3', name: 'Toner della stampante', wound: 'nessuna', trace: 'polvere nera', origin: 'salone', clue: 'Polvere nera di toner ovunque', missing: 'Stampante con il vano toner vuoto', autopsy: 'nessuna ferita visibile, vie respiratorie sporche di polvere nera.' },
+  { id: 'w4', name: 'Portachiavi del caveau', wound: 'strangolamento', trace: 'fibre', origin: 'caveau', clue: 'Fibre di cordino sul pavimento', missing: 'Gancio vuoto nella bacheca chiavi', autopsy: 'strangolamento, segni sottili sul collo.' },
+  { id: 'w5', name: 'Statuetta Best Performer', wound: 'contusione', trace: 'plexiglass', origin: 'premium', clue: 'Frammenti di plexiglass sotto la scrivania', missing: 'Piedistallo vuoto sulla mensola', autopsy: 'contusione alla tempia, oggetto spigoloso.' }
+];
+const MOT = [
+  { id: 'm1', name: 'Eredità del cliente', desc: 'Un cliente defunto, un testamento e qualcuno che ci ha messo le mani.', v: [
+    { t: 'A falsifica il testamento di un cliente, V lo scopre', d: (a, v) => ['Testamento del cav. Bernardi, beneficiario corretto a penna: ' + a, 'Appunto di ' + v + ': calligrafia diversa, parlarne con l’Audit'] },
+    { t: 'V falsifica il testamento, A era il vero erede', d: (a, v) => ['Lettera del cav. Bernardi: caro ' + a + ', sei l’unico che mi offriva il caffè', 'Testamento con il nome di ' + a + ' cancellato e sostituito da ' + v] },
+    { t: 'Una cliente si lamenta di A, V sta per inoltrare', d: (a, v) => ['Lettera della sig.ra Colombo: ' + a + ' mi ha venduto una polizza vita per il gatto', 'Post-it di ' + v + ': girare la lettera su ' + a + ' in Direzione'] } ] },
+  { id: 'm2', name: 'Debito', desc: 'Soldi prestati, rate bocciate, solleciti senza fine.', v: [
+    { t: 'V deve soldi di gioco ad A', d: (a, v) => ['Pagherò di ' + v + ' a ' + a + ': 3.400 €, burraco del giovedì', 'Messaggio di ' + a + ' a ' + v + ': venerdì o ti segnalo in Centrale Rischi'] },
+    { t: 'V boccia la rateizzazione di A', d: (a, v) => ['Rinegoziazione di ' + a + ': esito NEGATIVO, istruttore ' + v, 'Cambiale di ' + a + ' in scadenza domani'] },
+    { t: 'V sommerge A di solleciti', d: (a, v) => ['Quinto sollecito a ' + a + ', firmato ' + v + ', con faccina sorridente', 'Estratto conto di ' + a + ': saldo −12,40 €'] } ] },
+  { id: 'm3', name: 'Ricatto', desc: 'Una foto, una lettera anonima, un segreto da tenere.', v: [
+    { t: 'V ricatta A con una foto', d: (a, v) => ['Foto di ' + a + ' che stampa le partecipazioni di nozze in filiale', 'Lettera anonima nel cassetto di ' + v + ': mille euro o la foto di ' + a + ' va in Direzione'] },
+    { t: 'V riceve una lettera anonima su A', d: (a, v) => ['Lettera anonima a ' + v + ': ' + a + ' non è chi dice di essere', 'Foto di ' + a + ' in spiaggia il giorno del corso obbligatorio'] },
+    { t: 'A ricatta V, V si ribella', d: (a, v) => ['Appunto di ' + v + ': domani dico a tutti che ' + a + ' mi ricatta', 'Bonifici da ' + v + ' a ' + a + ', causale: consulenza'] } ] },
+  { id: 'm4', name: 'Carriera negata', desc: 'Una promozione sfumata e un ego che non l’ha presa bene.', v: [
+    { t: 'V boccia la promozione di A', d: (a, v) => ['Richiesta di promozione di ' + a + ': RESPINTA, firmato ' + v, 'Targhetta già stampata: ' + a + ', Direttore'] },
+    { t: 'V ottiene la promozione che spettava ad A', d: (a, v) => ['Nomina di ' + v + ', con «dovevo essere io» scritto a penna da ' + a, 'Organigramma con la faccia di ' + v + ' scarabocchiata, calligrafia di ' + a] },
+    { t: 'V si prende il merito del lavoro di A', d: (a, v) => ['Premio Best Performer a ' + v + ' per il portafoglio costruito da ' + a, 'Mail stampata di ' + a + ': quei clienti li ho portati io'] } ] },
+  { id: 'm5', name: 'Vendetta', desc: 'Un vecchio torto che qualcuno non ha mai dimenticato.', v: [
+    { t: 'Il vecchio concorso rubato', d: (a, v) => ['Ritaglio del 2006: ' + v + ' primo al concorso, escluso ' + a + ' per un timbro storto', 'Vecchia agenda di ' + a + ': non dimenticare'] },
+    { t: 'Il posto auto sottratto', d: (a, v) => ['Verbale posti auto: il posto di ' + a + ' passa a ' + v, 'Agenda di ' + a + ' con 47 giorni cerchiati in rosso'] },
+    { t: 'La villetta pignorata', d: (a, v) => ['Giornale locale: pignorata la villetta della famiglia di ' + a + ', pratica di ' + v, 'Foto di famiglia di ' + a + ' davanti alla villetta'] } ] }
+];
+const NEUTRI = ['Tazzina di caffè della macchinetta', 'Modulo antiriciclaggio compilato a metà', 'Post-it: richiamare cliente', 'Volantino del mutuo giovani', 'Timbro della filiale senza inchiostro'];
+
+/* ============ GENERATORE DEGLI INDIZI ============ */
+function generate(pins, variant, seed) {
+  let x = seed * 7919 + 13;
+  const rnd = () => { x = (x * 9301 + 49297) % 233280; return x / 233280; };
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const A = byId(SUS, pins.assassino), V = byId(SUS, pins.vittima), W = byId(WEA, pins.arma), M = byId(MOT, pins.movente);
+  const clues = [], count = {}; let id = 0;
+  ROOMS.forEach(r => count[r.id] = 0);
+  const add = (room, text, tag, kind, extra) => { clues.push(Object.assign({ id: 'c' + (id++), room, text, tag, kind, removed: false }, extra || {})); count[room]++; };
+  const place = exclude => {
+    let opts = ROOMS.map(r => r.id).filter(r => !exclude.includes(r) && count[r] < 4);
+    if (!opts.length) opts = ROOMS.map(r => r.id).filter(r => !exclude.includes(r));
+    return shuffle(opts)[0];
+  };
+  const traits = shuffle(traitClues(A, false));
+  add(pins.stanza, 'Segni di lotta: sedia rovesciata, faldoni a terra', 'Scena del delitto', 'scena');
+  add(pins.stanza, W.clue, 'Traccia dell’arma', 'arma');
+  add(pins.stanza, traits[0].t, 'Assassino · ' + traits[0].a, 'killer', { attr: traits[0].a });
+  add(pins.stanza, traits[1].t, 'Assassino · ' + traits[1].a, 'killer', { attr: traits[1].a });
+  const r1 = place([pins.stanza]);
+  add(r1, traits[2].t, 'Assassino · ' + traits[2].a, 'killer', { attr: traits[2].a });
+  add(place([pins.stanza, r1]), traits[3].t, 'Assassino · ' + traits[3].a, 'killer', { attr: traits[3].a });
+  add(W.origin, W.missing, 'Origine dell’arma', 'origine');
+  const docs = M.v[variant].d(A.name, V.name);
+  const d1 = place([pins.stanza]);
+  add(d1, docs[0], 'Movente · ' + first(A.name), 'movente');
+  add(place([pins.stanza, d1]), docs[1], 'Movente · ' + first(A.name), 'movente');
+  SUS.filter(p => p.id !== A.id && p.id !== V.id).forEach(p => {
+    const other = shuffle(SUS.filter(q => q.id !== p.id))[0];
+    const mm = shuffle(MOT)[0];
+    add(place([]), mm.v[Math.floor(rnd() * 3)].d(p.name, other.name)[0], 'Segreto · ' + first(p.name), 'segreto');
+  });
+  shuffle(NEUTRI).slice(0, 2).forEach(t => add(place([]), t, 'Oggetto neutro', 'neutro'));
+  return clues;
+}
+function traitClues(A, flip) {
+  const shoe = flip ? (A.shoe === 'grande' ? 'piccola' : 'grande') : A.shoe;
+  const sx = flip ? !A.sx : A.sx;
+  const smoke = flip ? !A.smoke : A.smoke;
+  const hair = flip ? (A.hair === 'biondo' ? 'scuro' : 'biondo') : A.hair;
+  return [
+    { a: 'scarpa', t: 'Impronta di scarpa ' + shoe },
+    { a: 'mano', t: 'Impronta di mano ' + (sx ? 'sinistra' : 'destra') + ' su una maniglia' },
+    { a: 'fumo', t: smoke ? 'Mozzicone di sigaretta ancora tiepido' : 'Odore di menta, niente fumo: chi è passato non fuma' },
+    { a: 'capelli', t: 'Capello ' + hair + ' impigliato' }
+  ];
+}
+
+/* ============ VERBALE NOIR ============ */
+function verbale(caso, seed) {
+  const P = caso.pins, A = byId(SUS, P.assassino), V = byId(SUS, P.vittima);
+  const pick = (list, k) => list[(seed * 7 + k * 3) % list.length];
+  const OPEN = [
+    V.name + ' è stat' + o(V) + ' ritrovat' + o(V) + ' nella bussola d’ingresso alle 8:15. Per la prima volta in carriera, in anticipo.',
+    'Il vigilante ha aperto la filiale e ha trovato ' + V.name + ' nella bussola. Ha pensato a un guasto del metal detector. Non lo era.',
+    'Lunedì mattina, bussola d’ingresso: ' + V.name + ', ' + V.role.toLowerCase() + ', immobile. Più del solito.'
+  ];
+  const WL = {
+    w1: ['con il cassetto del bancomat, l’unica cosa in filiale che funziona sempre al primo colpo.', 'con il cassetto del bancomat. Prelievo non autorizzato, importo: tutto.'],
+    w2: ['con il tagliacarte della Direzione, finalmente usato per qualcosa di più tagliente di una circolare.', 'con il tagliacarte: firma, timbro e taglio.'],
+    w3: ['con il toner della stampante, che per una volta non segnalava “livello basso”.', 'con il toner della stampante. Ultima stampa: in bianco e nero.'],
+    w4: ['con il portachiavi del caveau, quello che nessuno trova mai quando serve. Stavolta qualcuno l’ha trovato.', 'con il cordino del portachiavi del caveau. Doppia chiave, doppio giro.'],
+    w5: ['con la statuetta “Best Performer Premium”: il riconoscimento più pesante mai assegnato in filiale.', 'con la statuetta Best Performer. Obiettivo raggiunto, a modo suo.']
+  };
+  const RL = {
+    archivio: ['È successo in archivio, dove tanto non entra nessuno dal 2011.', 'Teatro del delitto: l’archivio, tra un faldone del 1998 e un altro faldone del 1998.'],
+    salone: ['È successo in salone, sotto il cartellone del mutuo a tasso agevolato.', 'È successo in salone, davanti al totem dei numeri. Nessuno ha preso il biglietto.'],
+    casse: ['È successo in area casse, a vetro blindato abbassato: nessuno ha sentito niente, come sempre.', 'È successo in area casse, dopo la quadratura. Quella, almeno, tornava.'],
+    direzione: ['È successo in Direzione, a porta chiusa, come tutte le decisioni importanti.', 'È successo in Direzione, dove i problemi di solito si rimandano a data da destinarsi.'],
+    premium: ['È successo negli uffici premium, dove anche i delitti hanno un servizio dedicato.', 'È successo negli uffici premium, tra un aperitivo con il cliente e l’altro.'],
+    caveau: ['È successo nel caveau: l’unico posto della filiale dove il silenzio è garantito da contratto.', 'È successo nel caveau, con la temporizzazione attiva. Puntualissimi.']
+  };
+  const ML = {
+    m1: [A.name + ' aveva messo le mani sull’eredità di un cliente. ' + V.name + ' ci aveva messo il naso. Solo uno dei due ha tolto qualcosa.'],
+    m2: ['Una questione di debiti tra ' + A.name + ' e ' + V.name + '. Anche questo, a modo suo, è un piano di rientro.'],
+    m3: ['Di mezzo c’erano una foto e un segreto. ' + V.name + ' ne sapeva troppo, e in banca la riservatezza è tutto.'],
+    m4: ['Il movente? Una carriera andata storta. In banca un no è definitivo solo se lo è anche chi lo pronuncia.', A.name + ' voleva quella promozione. ' + V.name + ' era l’ostacolo. Ora l’ostacolo è rimosso, la promozione no.'],
+    m5: [A.name + ' aspettava questo momento da anni. In fondo, è la stessa pazienza che serve per un fondo pensione.']
+  };
+  const TL = [
+    A.smoke ? 'A tradire ' + A.name + ' è stato un mozzicone: il fumo uccide, ma di solito più lentamente.' : A.name + ' non fuma, e l’odore di menta l’ha tradit' + o(A) + '. Il salutismo non paga.',
+    'Un capello ' + A.hair + ' ha fatto il resto. Il parrucchiere di ' + first(A.name) + ' non ne sarà fiero.',
+    'L’impronta di una mano ' + (A.sx ? 'sinistra' : 'destra') + ' su una maniglia ha chiuso il cerchio.'
+  ];
+  const CL = ['La filiale ha riaperto alle 8:30. I clienti non hanno notato differenze.', 'Il budget del trimestre, comunque, è stato raggiunto.', 'Al posto di ' + V.name + ' è arrivata una circolare. Nessuno ha notato la differenza.'];
+  return pick(OPEN, 0) + ' ' + A.name + ' l’ha uccis' + o(V) + ' ' + pick(WL[P.arma], 1) + ' ' + pick(RL[P.stanza], 2) + ' ' + pick(ML[P.movente], 3) + ' ' + pick(TL, 4) + ' ' + pick(CL, 5);
+}
+
+/* ============ ROUTER ============ */
+const params = new URLSearchParams(location.search);
+const MY_CASES_KEY = 'delitto_miei_casi';
+function myCases() { try { return JSON.parse(localStorage.getItem(MY_CASES_KEY) || '[]'); } catch (e) { return []; } }
+function addMyCase(code) { try { const l = myCases(); l.unshift(code); localStorage.setItem(MY_CASES_KEY, JSON.stringify(l.slice(0, 20))); } catch (e) {} }
+function go(q) { location.search = q; }
+
+if (params.get('caso')) Detective(params.get('caso').toUpperCase());
+else if (params.get('crea') !== null) Creator();
+else Home();
+
+/* ============ HOME ============ */
+async function Home() {
+  const codes = myCases();
+  $app.innerHTML = `
+  <div class="home">
+    <h1 class="paper pin type" style="padding:18px 24px;font-size:38px;font-weight:400;transform:rotate(-.6deg)">Delitto in Filiale
+      <div style="font-family:'Courier Prime',monospace;font-size:16px;margin-top:6px">Uno prepara il delitto, l’altro indaga. Poi ci si scambia i ruoli.</div></h1>
+    <section class="paper pin" style="padding:22px;transform:rotate(.5deg)">
+      <h2 class="type" style="margin:0 0 10px;font-weight:400">Prepara un caso</h2>
+      <p style="margin:0 0 16px">Scegli vittima, assassino, arma, stanza e movente, poi depista il collega.</p>
+      <button class="stamp" style="font-size:22px;padding:10px 18px" onclick="go('crea')">Prepara il delitto</button>
+    </section>
+    <section class="paper pin" style="padding:22px;transform:rotate(-.4deg)">
+      <h2 class="type" style="margin:0 0 10px;font-weight:400">Apri un caso</h2>
+      <label for="code" style="display:block;margin-bottom:8px">Codice ricevuto dal collega</label>
+      <div style="display:flex;gap:10px">
+        <input id="code" maxlength="6" autocomplete="off" style="flex:1;min-height:44px;padding:8px 12px;border:1.5px solid var(--ink);text-transform:uppercase;font-size:20px;letter-spacing:3px">
+        <button class="btn" id="open">Indaga</button>
+      </div>
+    </section>
+    <section class="paper" style="grid-column:1/-1;padding:18px 22px;background:var(--paper2)">
+      <h2 class="type" style="margin:0 0 10px;font-weight:400">I casi che hai preparato</h2>
+      <div id="mine">${codes.length ? 'Caricamento…' : 'Ancora nessuno. Prepara il primo delitto.'}</div>
+    </section>
+  </div>`;
+  const open = () => { const v = document.getElementById('code').value.trim(); if (v) go('caso=' + encodeURIComponent(v.toUpperCase())); };
+  document.getElementById('open').onclick = open;
+  document.getElementById('code').onkeydown = e => { if (e.key === 'Enter') open(); };
+  if (!codes.length) return;
+  const { data, error } = await sb.from('casi').select('codice,stato,creato_il,accusa').in('codice', codes);
+  if (error) { document.getElementById('mine').textContent = 'Non riesco a leggere i casi: controlla la configurazione di Supabase.'; return; }
+  const lbl = { aperto: 'indagine in corso', risolto: 'risolto dal detective', fallito: 'il detective ha sbagliato' };
+  document.getElementById('mine').innerHTML = codes.map(c => {
+    const r = (data || []).find(d => d.codice === c); if (!r) return '';
+    const pts = r.accusa ? ' · ' + r.accusa.punti + ' punti' : '';
+    return `<div style="display:flex;justify-content:space-between;gap:12px;border-top:1px dashed #8A7A62;padding:8px 0">
+      <a href="?caso=${esc(c)}" style="color:var(--red)"><b>${esc(c)}</b></a><span>${lbl[r.stato]}${pts}</span></div>`;
+  }).join('');
+}
+
+/* ============ CREATORE ============ */
+function Creator() {
+  const PIN = { vittima: ['Vittima', '#1F1A14'], assassino: ['Assassino', '#B3261E'], arma: ['Arma', '#1D5FA8'], stanza: ['Stanza', '#2E7D4F'], movente: ['Movente', '#9A5800'] };
+  const ORDER = ['vittima', 'assassino', 'arma', 'stanza', 'movente'];
+  const S = { step: 1, active: 'vittima', pins: { vittima: null, assassino: null, arma: null, stanza: null, movente: null }, variant: 0,
+    seed: Math.floor(Math.random() * 100000), clues: [], tokenType: null, tokens: [], msg: '', code: null, autore: '' };
+  const allSet = () => ORDER.every(k => S.pins[k]);
+
+  function setPin(kind, id) {
+    if (S.step !== 1) return;
+    const key = kind === 'persona' ? S.active : kind;
+    if (!S.active || (kind === 'persona' ? !['vittima', 'assassino'].includes(S.active) : S.active !== kind)) {
+      S.msg = 'Questo bersaglio non va con il pin selezionato: scegli prima il pin giusto.'; return render();
+    }
+    if (key === 'vittima' && S.pins.assassino === id) S.pins.assassino = null;
+    if (key === 'assassino' && S.pins.vittima === id) S.pins.vittima = null;
+    if (key === 'movente' && S.pins.movente !== id) S.variant = 0;
+    S.pins[key] = id; S.active = ORDER.find(k => !S.pins[k]) || null; S.msg = ''; render();
+  }
+
+  function placeToken(kind, target) {
+    if (S.step !== 3 || !S.tokenType || S.tokens.length >= 2) return;
+    const t = S.tokenType, P = S.pins, tok = { type: t };
+    const gone = k => S.clues.filter(c => c.kind === k && c.removed).length;
+    if (t === 'pulizia') {
+      if (kind !== 'clue') { S.msg = 'La pulizia va su un post-it: clicca l’indizio da far sparire.'; return render(); }
+      const c = S.clues.find(x => x.id === target); if (c.removed) return;
+      if (c.kind === 'falso') { S.msg = 'Non puoi ripulire un indizio che hai piazzato tu.'; return render(); }
+      if (c.kind === 'killer' && gone('killer') >= 1) { S.msg = 'Rifiutato: devono restare almeno 3 tracce dell’assassino, altrimenti il caso è irrisolvibile.'; return render(); }
+      if ((c.kind === 'scena' && gone('arma')) || (c.kind === 'arma' && gone('scena'))) { S.msg = 'Rifiutato: la stanza del delitto deve restare riconoscibile.'; return render(); }
+      if (c.kind === 'movente' && gone('movente') >= 1) { S.msg = 'Rifiutato: almeno una prova del movente deve restare.'; return render(); }
+      c.removed = true; tok.clueId = c.id; tok.label = 'Pulizia: ' + c.text;
+    } else if (t === 'falso' || t === 'arma') {
+      if (kind !== 'room') { S.msg = 'Questo gettone va su una stanza: clicca il nome della stanza.'; return render(); }
+      const nid = 'f' + Date.now(), roomName = byId(ROOMS, target).name;
+      if (t === 'arma') {
+        if (target === P.stanza) { S.msg = 'L’arma è già nella stanza del delitto: spostala altrove.'; return render(); }
+        S.clues.push({ id: nid, room: target, text: 'Trovato qui: ' + byId(WEA, P.arma).name.toLowerCase(), tag: 'Arma spostata', kind: 'falso', removed: false });
+        tok.label = 'Arma spostata in ' + roomName;
+      } else {
+        const fakes = traitClues(byId(SUS, P.assassino), true);
+        const used = S.tokens.filter(k => k.type === 'falso').length;
+        const f = fakes[(S.seed + used * 2) % 4];
+        S.clues.push({ id: nid, room: target, text: f.t, tag: 'Traccia falsa', kind: 'falso', removed: false });
+        tok.label = 'Indizio falso in ' + roomName + ': ' + f.t;
+      }
+      tok.clueId = nid;
+    } else if (t === 'testimone') {
+      if (kind !== 'interrog') { S.msg = 'Il testimone confuso va sull’interrogatorio, nel riquadro a destra.'; return render(); }
+      tok.label = 'Testimone confuso: il vigilante mentirà su un dettaglio';
+    }
+    S.tokens.push(tok); S.tokenType = null; S.msg = ''; render();
+  }
+
+  function undo(i) {
+    const tok = S.tokens[i];
+    if (tok.type === 'pulizia') S.clues.forEach(c => { if (c.id === tok.clueId) c.removed = false; });
+    if (tok.type === 'falso' || tok.type === 'arma') S.clues = S.clues.filter(c => c.id !== tok.clueId);
+    S.tokens.splice(i, 1); S.msg = ''; render();
+  }
+
+  async function send() {
+    const caso = { pins: S.pins, variant: S.variant, seed: S.seed, clues: S.clues, tokens: S.tokens };
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const code = Array.from({ length: 6 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('');
+      const { error } = await sb.from('casi').insert({ codice: code, autore: S.autore.trim() || null, caso, indagine: { actions: 10 } });
+      if (!error) { S.code = code; S.step = 4; addMyCase(code); return render(); }
+      if (error.code !== '23505') { toast('Invio non riuscito: ' + error.message); return; }
+    }
+    toast('Invio non riuscito: riprova tra un attimo.');
+  }
+
+  function hint() {
+    if (S.msg) return S.msg;
+    if (S.step === 1) return S.active ? 'Pin «' + PIN[S.active][0] + '» in mano: ora clicca ' + ({ vittima: 'un personaggio', assassino: 'un personaggio', arma: 'un’arma', stanza: 'una stanza sulla piantina', movente: 'un movente' })[S.active] + '.' : 'Tutto scelto. Genera gli indizi quando sei pronto.';
+    if (S.step === 3) return S.tokenType ? ({ pulizia: 'Clicca il post-it da far sparire.', falso: 'Clicca la stanza dove piazzare la traccia falsa.', arma: 'Clicca la stanza dove far ritrovare l’arma.', testimone: 'Clicca l’interrogatorio del vigilante.' })[S.tokenType] : (S.tokens.length < 2 ? 'Scegli un gettone di depistaggio, poi il bersaglio.' : 'Gettoni finiti. Se il caso ti piace, invialo.');
+    return 'Caso sigillato. Manda il link al collega.';
+  }
+
+  function render() {
+    const P = S.pins, curM = P.movente ? byId(MOT, P.movente) : null;
+    const steps = ['Scegli il delitto', 'Genera indizi', 'Depista', 'Invia'].map((n, i) => {
+      const cur = i + 1 === S.step, done = i + 1 < S.step;
+      return `<div style="background:${cur ? 'var(--ink)' : done ? '#D9D2C3' : 'var(--paper)'};color:${cur ? 'var(--paper)' : 'var(--ink)'};padding:10px 14px;box-shadow:0 2px 5px rgba(40,20,5,.3);white-space:nowrap"><b>${i + 1}.</b> ${n}</div>`;
+    }).join('');
+    const main = S.step === 1 ? `<button class="stamp" data-a="gen" style="min-width:190px;font-size:20px" ${allSet() ? '' : 'disabled'}>Genera indizi</button>`
+      : S.step === 3 ? `<button class="btn" data-a="regen">Rigenera indizi</button><button class="stamp" data-a="send" style="min-width:190px;font-size:20px">Invia il caso</button>` : '';
+    const targetRoom = (S.step === 1 && S.active === 'stanza') || (S.step === 3 && ['falso', 'arma'].includes(S.tokenType));
+    const bgK = { killer: 'var(--post)', scena: 'var(--post)', arma: 'var(--post)', origine: 'var(--post)', falso: 'var(--post)', movente: 'var(--pink)', segreto: 'var(--pink)', neutro: 'var(--mist)' };
+    const rooms = ROOMS.map(r => `
+      <div class="cr-room" style="background:${P.stanza === r.id ? 'rgba(46,125,79,.10)' : 'rgba(255,255,255,.35)'}">
+        <button class="cr-room-head" data-a="room" data-id="${r.id}" style="background:${targetRoom ? 'rgba(246,226,122,.55)' : 'transparent'}">
+          <span class="type" style="font-size:17px;color:var(--blue)">${r.name}</span>
+          ${P.stanza === r.id ? '<span class="badge" style="background:#2E7D4F">Stanza del delitto</span>' : ''}
+        </button>
+        <div class="cr-clues">${S.clues.filter(c => c.room === r.id).map((c, i) => `
+          <button class="postit" data-a="clue" data-id="${c.id}" style="background:${bgK[c.kind]};transform:rotate(${rotFor(i)}deg);${c.removed ? 'opacity:.45;text-decoration:line-through' : ''}">
+            <div class="tag">${esc(c.tag)}</div><div class="txt">${esc(c.text)}</div>
+            ${c.kind === 'falso' ? '<div class="mark">PIAZZATO</div>' : c.removed ? '<div class="mark">RIPULITO</div>' : ''}
+          </button>`).join('')}</div>
+      </div>`).join('');
+
+    const pinsHtml = S.step === 1 ? `<div class="paper" style="padding:10px 12px">
+      <div class="type" style="font-size:15px;margin-bottom:8px">I tuoi pin</div>
+      <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px">${ORDER.map(k => {
+        let v = '—'; const id = P[k];
+        if (id) v = k === 'stanza' ? byId(ROOMS, id).name : k === 'arma' ? first(byId(WEA, id).name) : k === 'movente' ? first(byId(MOT, id).name) : byId(SUS, id).name.split(' ')[1];
+        return `<button data-a="pin" data-id="${k}" style="border:2px solid ${S.active === k ? PIN[k][1] : '#D9D2C3'};background:#fff;padding:6px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:64px">
+          <span style="width:16px;height:16px;border-radius:50%;background:${PIN[k][1]}"></span><b style="font-size:12px">${PIN[k][0]}</b><span style="font-size:10.5px;color:var(--muted);text-align:center;line-height:1.1">${esc(v)}</span></button>`;
+      }).join('')}</div></div>` : '';
+
+    const usedTest = S.tokens.some(k => k.type === 'testimone'), usedArma = S.tokens.some(k => k.type === 'arma');
+    const TT = [['pulizia', 'Pulizia', 'su un post-it'], ['falso', 'Indizio falso', 'su una stanza'], ['arma', 'Arma spostata', 'su una stanza'], ['testimone', 'Testimone confuso', 'sull’interrogatorio']];
+    const tokHtml = S.step === 3 ? `<div class="paper" style="padding:10px 12px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><div class="type" style="font-size:15px">Depistaggio</div><div style="font-size:13px">Gettoni rimasti: <b>${2 - S.tokens.length}</b> / 2</div></div>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px">${TT.map(([k, n, tg]) => {
+        const dis = S.tokens.length >= 2 || (k === 'testimone' && usedTest) || (k === 'arma' && usedArma);
+        return `<button data-a="tok" data-id="${k}" ${dis ? 'disabled' : ''} style="border:2px solid ${S.tokenType === k ? 'var(--red)' : '#D9D2C3'};background:${dis ? '#E4DCCB' : '#fff'};padding:6px 8px;text-align:left;min-height:48px"><div style="font-size:13px;font-weight:700">${n}</div><div style="font-size:11px;color:var(--muted)">${tg}</div></button>`;
+      }).join('')}</div>
+      ${S.tokens.map((t, i) => `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;border-top:1px dashed #8A7A62;margin-top:8px;padding-top:6px;font-size:12.5px"><span>${esc(t.label)}</span><button data-a="undo" data-id="${i}" style="border:1px solid var(--ink);background:#fff;font-size:12px;padding:3px 8px;min-height:28px">Annulla</button></div>`).join('')}
+      <button data-a="interrog" style="width:100%;margin-top:8px;border:1.5px dashed var(--ink);background:${usedTest ? 'var(--pink)' : S.tokenType === 'testimone' ? 'rgba(246,226,122,.7)' : '#fff'};padding:8px;font-size:13px;text-align:left;min-height:40px"><b>Interrogatorio del vigilante</b>: ${usedTest ? 'mentirà su un dettaglio' : 'dirà la verità'}</button>
+      <label for="autore" style="display:block;margin-top:10px;font-size:13px">Firma il caso (facoltativo)</label>
+      <input id="autore" value="${esc(S.autore)}" maxlength="30" style="width:100%;min-height:40px;padding:6px 10px;border:1.5px solid var(--ink)">
+    </div>` : '';
+
+    const sus = SUS.map(p => {
+      const pin = P.vittima === p.id ? ['Vittima', '#1F1A14'] : P.assassino === p.id ? ['Assassino', '#B3261E'] : null;
+      return `<button data-a="sus" data-id="${p.id}" class="pick" style="position:relative;flex-direction:column;align-items:flex-start;border-color:${pin ? pin[1] : '#D9D2C3'};min-height:62px">
+        <span class="hand" style="font-size:19px;font-weight:700;line-height:1">${p.name}</span><span style="font-size:10.5px">${p.role}</span>
+        <span style="font-size:10.5px;color:var(--muted)">Scarpa ${p.shoe}, ${p.sx ? 'mancin' + o(p) : 'destr' + o(p)}, ${p.smoke ? 'fuma' : 'non fuma'}, ${HAIR_PL[p.hair]}</span>
+        ${pin ? `<span class="badge" style="position:absolute;top:-8px;right:6px;background:${pin[1]}">${pin[0]}</span>` : ''}</button>`;
+    }).join('');
+    const wea = WEA.map(w => `<button data-a="wea" data-id="${w.id}" class="pick" style="border-color:${P.arma === w.id ? '#1D5FA8' : '#D9D2C3'}"><span style="font-size:13.5px"><b>${w.name}</b> <span style="color:var(--muted)">(${w.wound}, ${w.trace})</span></span>${P.arma === w.id ? '<span class="badge" style="background:#1D5FA8">Arma</span>' : ''}</button>`).join('');
+    const mot = MOT.map(m => `<button data-a="mot" data-id="${m.id}" class="pick" style="background:var(--paper2);border-color:${P.movente === m.id ? '#9A5800' : '#CDBE9F'}"><span class="hand" style="font-size:21px;font-weight:700">${m.name}</span>${P.movente === m.id ? '<span class="badge" style="background:#9A5800">Movente</span>' : ''}</button>`).join('');
+    const variantHtml = curM ? `<div class="paper" style="padding:8px 12px;display:flex;gap:10px;align-items:center"><div style="flex:1;font-size:13px;line-height:1.35"><b>Variante ${S.variant + 1}/3:</b> ${esc(curM.v[S.variant].t)}</div>${S.step === 1 ? '<button class="btn" data-a="variant" style="font-size:12px">Cambia</button>' : ''}</div>` : '';
+
+    const link = S.code ? location.origin + location.pathname + '?caso=' + S.code : '';
+    const sent = S.step === 4 ? `<div class="overlay"><div class="paper" style="width:min(600px,100%);padding:24px 28px;transform:rotate(-1deg)">
+      <div class="stamp" style="display:inline-block;padding:4px 12px;font-size:26px;transform:rotate(-3deg)">Caso sigillato</div>
+      <p style="font-size:16px;line-height:1.5">Codice del caso: <b class="type" style="font-size:24px;letter-spacing:3px">${S.code}</b></p>
+      <p style="margin:0 0 8px">Manda questo link al collega. Vedrà solo la parete del detective, con i tuoi depistaggi già al loro posto.</p>
+      <div style="display:flex;gap:8px"><input readonly value="${esc(link)}" style="flex:1;min-height:44px;padding:6px 10px;border:1.5px solid var(--ink)"><button class="btn" data-a="copy">Copia link</button></div>
+      <div style="display:flex;gap:10px;margin-top:16px"><button class="btn" data-a="home">Torna all’inizio</button><button class="btn" data-a="new">Prepara un altro caso</button></div>
+    </div></div>` : '';
+
+    $app.innerHTML = `<div class="wrap">
+      <div style="display:flex;gap:14px;align-items:stretch;flex-wrap:wrap">
+        <div class="paper" style="padding:12px 20px;transform:rotate(-.4deg)"><a href="./" class="type" style="font-size:28px;color:var(--ink);text-decoration:none">Prepara il delitto</a><div style="font-size:13px;color:var(--muted)">Il collega non vedrà nulla di questa pagina</div></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${steps}</div>
+        <div class="hand" role="status" style="flex:1;min-width:260px;background:var(--post);padding:10px 16px;font-size:22px;line-height:1.1;display:flex;align-items:center;box-shadow:0 2px 5px rgba(40,20,5,.3)">${esc(hint())}</div>
+        ${main}
+      </div>
+      <div class="cr-grid">
+        <div class="plan" style="padding:14px 16px 16px;box-shadow:var(--shadow)">
+          <div class="type" style="font-size:18px;color:var(--blue);margin-bottom:10px">Piantina della filiale</div>
+          <div class="cr-rooms">${rooms}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          ${pinsHtml}${tokHtml}
+          <div class="label">Personaggi</div><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">${sus}</div>
+          <div class="label">Armi</div><div style="display:flex;flex-direction:column;gap:5px">${wea}</div>
+          <div class="label">Moventi</div><div style="display:flex;flex-direction:column;gap:5px">${mot}</div>
+          ${variantHtml}
+        </div>
+      </div></div>${sent}`;
+    const au = document.getElementById('autore'); if (au) au.oninput = e => { S.autore = e.target.value; };
+  }
+
+  $app.onclick = e => {
+    const b = e.target.closest('[data-a]'); if (!b) return;
+    const a = b.dataset.a, id = b.dataset.id;
+    if (a === 'pin') { S.active = id; S.msg = ''; render(); }
+    else if (a === 'sus') setPin('persona', id);
+    else if (a === 'wea') setPin('arma', id);
+    else if (a === 'mot') setPin('movente', id);
+    else if (a === 'room') { if (S.step === 1) setPin('stanza', id); else placeToken('room', id); }
+    else if (a === 'clue') placeToken('clue', id);
+    else if (a === 'interrog') placeToken('interrog');
+    else if (a === 'tok') { S.tokenType = id; S.msg = ''; render(); }
+    else if (a === 'undo') undo(+id);
+    else if (a === 'variant') { S.variant = (S.variant + 1) % 3; render(); }
+    else if (a === 'gen' && allSet()) { S.clues = generate(S.pins, S.variant, S.seed); S.step = 3; S.active = null; S.msg = ''; render(); }
+    else if (a === 'regen') { S.seed++; S.clues = generate(S.pins, S.variant, S.seed); S.tokens = []; S.tokenType = null; S.msg = ''; render(); }
+    else if (a === 'send') { b.disabled = true; send(); }
+    else if (a === 'copy') { navigator.clipboard.writeText(location.origin + location.pathname + '?caso=' + S.code).then(() => toast('Link copiato.'), () => toast('Copia non riuscita: seleziona il link a mano.')); }
+    else if (a === 'home') go('');
+    else if (a === 'new') go('crea');
+  };
+  render();
+}
+
+/* ============ DETECTIVE ============ */
+async function Detective(code) {
+  $app.innerHTML = '<div class="wrap"><div class="paper type" style="padding:20px;font-size:22px">Apro il fascicolo ' + esc(code) + '…</div></div>';
+  const { data: row, error } = await sb.from('casi').select('*').eq('codice', code).maybeSingle();
+  if (error || !row) {
+    $app.innerHTML = `<div class="wrap"><div class="paper pin" style="padding:24px;max-width:600px">
+      <div class="type" style="font-size:24px">Nessun caso con il codice ${esc(code)}</div>
+      <p>Controlla il codice che ti ha mandato il collega, oppure torna all’inizio.</p><a class="btn" href="./" style="display:inline-block;text-decoration:none;color:var(--ink)">Torna all’inizio</a></div></div>`;
+    return;
+  }
+  const caso = row.caso, P = caso.pins;
+  const A = byId(SUS, P.assassino), V = byId(SUS, P.vittima), W = byId(WEA, P.arma);
+  const testimoneFalso = caso.tokens.some(t => t.type === 'testimone');
+  const I = Object.assign({ actions: 10, searched: [], crossed: [], autopsy: false, interrog: false, lab: [] }, row.indagine || {});
+  let closed = row.stato !== 'aperto', accusa = row.accusa, labMode = false, showAccuse = false, seedV = 0;
+
+  async function save() {
+    const { error } = await sb.from('casi').update({ indagine: I, aggiornato_il: new Date().toISOString() }).eq('codice', code);
+    if (error) toast('Salvataggio non riuscito: la mossa è visibile ma non registrata. Ricarica la pagina.');
+  }
+  const visible = () => caso.clues.filter(c => !c.removed);
+  const tagFor = c => ({ killer: 'Traccia', scena: 'Traccia', arma: 'Traccia', origine: 'Traccia', falso: 'Traccia', movente: 'Documento', segreto: 'Documento', neutro: 'Oggetto' })[c.kind];
+
+  function interrogText() {
+    const attrs = ['scarpa', 'mano', 'fumo', 'capelli'];
+    const at = attrs[caso.seed % 4];
+    const lie = testimoneFalso;
+    const shoe = lie ? (A.shoe === 'grande' ? 'piccole' : 'grandi') : ({ piccola: 'piccole', media: 'di misura media', grande: 'grandi' })[A.shoe];
+    const sx = lie ? !A.sx : A.sx, smoke = lie ? !A.smoke : A.smoke, hair = lie ? (A.hair === 'biondo' ? 'scuri' : 'biondi') : HAIR_PL[A.hair];
+    return {
+      scarpa: 'ricorda qualcuno con scarpe ' + shoe + ' aggirarsi in filiale dopo la chiusura.',
+      mano: 'ha visto qualcuno aprire una porta con la mano ' + (sx ? 'sinistra' : 'destra') + ', di fretta.',
+      fumo: smoke ? 'ha sentito odore di fumo nei corridoi, la sera prima.' : 'giura che quella sera nessuno ha fumato: se ne sarebbe accorto.',
+      capelli: 'ha intravisto una persona dai capelli ' + hair + ' vicino all’ingresso.'
+    }[at];
+  }
+
+  async function accuse(sel) {
+    const ok = { chi: sel.chi === P.assassino, arma: sel.arma === P.arma, stanza: sel.stanza === P.stanza, movente: sel.movente === P.movente };
+    const giusti = Object.values(ok).filter(Boolean).length;
+    const punti = giusti * 3 + I.actions;
+    const stato = giusti === 4 ? 'risolto' : 'fallito';
+    const acc = { scelta: sel, esatti: ok, giusti, punti, azioni_rimaste: I.actions, il: new Date().toISOString() };
+    const { error } = await sb.from('casi').update({ accusa: acc, stato, indagine: I }).eq('codice', code).eq('stato', 'aperto');
+    if (error) { toast('Accusa non registrata: ' + error.message); return; }
+    accusa = acc; closed = true; showAccuse = false; row.stato = stato; render();
+  }
+
+  function render() {
+    const found = [];
+    I.searched.forEach(rid => visible().filter(c => c.room === rid).forEach(c => found.push(c)));
+    const roomsHtml = ROOMS.map(r => {
+      const done = I.searched.includes(r.id), n = visible().filter(c => c.room === r.id).length;
+      return `<button class="room-btn" data-a="search" data-id="${r.id}" ${done || closed || I.actions < 1 ? 'disabled' : ''} style="background:${done ? '#C9D3DD' : 'rgba(255,255,255,.55)'};opacity:1">
+        <span class="type" style="font-size:18px;color:var(--blue)">${r.name}</span>
+        <span style="font-size:13px;color:#3A4A5E">${done ? 'Perquisita, ' + n + ' indizi' : 'Perquisisci: 1 azione'}</span></button>`;
+    }).join('');
+    const tools = [['autopsy', 'Autopsia', 1, I.autopsy], ['interrog', 'Interrogatorio', 2, I.interrog], ['lab', 'Analisi di laboratorio', 2, false]].map(([k, n, c, used]) => {
+      const dis = closed || used || I.actions < c;
+      const label = k === 'lab' ? (labMode ? 'Clicca un post-it' : c + ' azioni') : used ? 'Fatto' : c + (c === 1 ? ' azione' : ' azioni');
+      return `<button data-a="tool" data-id="${k}" ${dis && !(k === 'lab' && labMode) ? 'disabled' : ''} style="min-height:48px;border:1.5px solid var(--ink);background:${labMode && k === 'lab' ? 'var(--post)' : used ? '#E4DCCB' : 'var(--paper)'};padding:8px 12px;text-align:left;display:flex;justify-content:space-between;align-items:center;font-size:15px"><b>${n}</b><span style="font-size:13px">${label}</span></button>`;
+    }).join('');
+    const reports = [];
+    if (I.autopsy) reports.push(['Autopsia', W.autopsy]);
+    if (I.interrog) reports.push(['Il vigilante', interrogText()]);
+    I.lab.forEach(l => { const c = caso.clues.find(x => x.id === l.clueId); if (c) reports.push(['Laboratorio', '«' + c.text + '» risulta ' + (c.kind === 'falso' ? 'PIAZZATO.' : 'autentico.')]); });
+
+    const sus = SUS.map((p, i) => {
+      const victim = p.id === P.vittima, crossed = !victim && I.crossed.includes(p.id);
+      return `<button class="polaroid" data-a="cross" data-id="${p.id}" ${victim ? 'disabled' : ''} style="transform:rotate(${rotFor(i)}deg);opacity:1" aria-pressed="${crossed}">
+        <div style="position:absolute;top:-6px;left:50%;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--red)"></div>
+        <div style="background:#D9D2C3;height:96px;display:flex;align-items:center;justify-content:center">
+          <svg width="72" height="88" viewBox="0 0 72 88" aria-hidden="true"><circle cx="36" cy="22" r="11" fill="#F3E9D6" stroke="#1F1A14" stroke-width="2.5"/><path d="M24 20 Q36 6 48 20" fill="none" stroke="${p.color}" stroke-width="6" stroke-linecap="round"/><g stroke="#1F1A14" stroke-width="2.5" stroke-linecap="round"><line x1="36" y1="33" x2="36" y2="60"/><line x1="36" y1="40" x2="22" y2="52"/><line x1="36" y1="40" x2="50" y2="52"/><line x1="36" y1="60" x2="26" y2="82"/><line x1="36" y1="60" x2="46" y2="82"/></g></svg>
+        </div>
+        <div class="hand" style="font-size:21px;font-weight:700;line-height:1.05;margin-top:6px">${p.name}</div>
+        <div style="font-size:12px;letter-spacing:.5px;margin:2px 0 6px">${p.role}</div>
+        <div style="font-size:12px;line-height:1.35;border-top:1px dashed #8A7A62;padding-top:4px">Scarpa ${p.shoe}, ${p.sx ? 'mancin' + o(p) : 'destr' + o(p)}<br>${p.smoke ? 'Fuma' : 'Non fuma'}, capelli ${HAIR_PL[p.hair]}</div>
+        ${victim ? '<div class="tape">VITTIMA</div>' : ''}${crossed ? CROSS : ''}</button>`;
+    }).join('');
+    const wea = WEA.map((w, i) => `<button data-a="cross" data-id="${w.id}" aria-pressed="${I.crossed.includes(w.id)}" style="position:relative;background:var(--paper);border:none;border-top:22px solid #D7E3EA;padding:10px 12px;box-shadow:var(--shadow);transform:rotate(${rotFor(i + 2)}deg);text-align:left;min-height:116px">
+      <div class="type" style="font-size:16px;line-height:1.15;margin-bottom:8px">${w.name}</div>
+      <div style="font-size:13px;line-height:1.4">Ferita: <b>${w.wound}</b><br>Traccia: <b>${w.trace}</b><br>Da: ${byId(ROOMS, w.origin).name}</div>${I.crossed.includes(w.id) ? CROSS : ''}</button>`).join('');
+    const mot = MOT.map((m, i) => `<button data-a="cross" data-id="${m.id}" aria-pressed="${I.crossed.includes(m.id)}" style="position:relative;background:var(--paper2);border:1px solid #CDBE9F;padding:10px 12px;box-shadow:var(--shadow);transform:rotate(${rotFor(i + 4)}deg);text-align:left;min-height:104px">
+      <div class="hand" style="font-size:26px;font-weight:700;line-height:1">${m.name}</div><div style="font-size:13px;line-height:1.35;margin-top:6px">${m.desc}</div>${I.crossed.includes(m.id) ? CROSS : ''}</button>`).join('');
+
+    const clueHtml = found.length ? found.map((c, i) => {
+      const lab = I.lab.find(l => l.clueId === c.id);
+      const mark = lab ? (c.kind === 'falso' ? '<div class="mark">PIAZZATO</div>' : '<div class="mark ok">AUTENTICO</div>') : '';
+      return `<button class="postit" data-a="labclue" data-id="${c.id}" ${labMode && !lab ? '' : 'tabindex="-1"'} style="background:${tagFor(c) === 'Documento' ? 'var(--pink)' : tagFor(c) === 'Oggetto' ? 'var(--mist)' : 'var(--post)'};transform:rotate(${rotFor(i)}deg);cursor:${labMode && !lab ? 'pointer' : 'default'};${labMode && !lab ? 'outline:3px dashed var(--blue);outline-offset:3px' : ''}">
+        <div style="position:absolute;top:-6px;left:50%;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--red)"></div>
+        <div class="tag">${byId(ROOMS, c.room).name}, ${tagFor(c).toLowerCase()}</div><div class="txt">${esc(c.text)}</div>${mark}</button>`;
+    }).join('') : '<div class="hand" style="background:var(--post);padding:14px;font-size:24px;line-height:1.1;transform:rotate(-1.5deg);box-shadow:var(--shadow)">Perquisisci una stanza sulla piantina per raccogliere i primi indizi.</div>';
+
+    let closedHtml = '';
+    if (closed && accusa) {
+      const s = accusa.scelta, e = accusa.esatti;
+      const line = (lbl, val, ok) => `<div>${lbl}: <b>${esc(val)}</b> ${ok ? '<span style="color:#2E6B45">(esatto)</span>' : '<span style="color:var(--red)">(sbagliato)</span>'}</div>`;
+      closedHtml = `<div class="paper pin" style="padding:16px 20px;margin-top:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <div class="type" style="font-size:20px">${row.stato === 'risolto' ? 'Verbale di chiusura' : 'Verbale di chiusura: caso fallito'}</div>
+          <div class="stamp" style="padding:4px 12px;font-size:18px">${accusa.punti} punti</div>
+        </div>
+        <div style="font-size:14px;line-height:1.5;margin:8px 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 16px">
+          ${line('Chi', byId(SUS, s.chi).name, e.chi)}${line('Con cosa', byId(WEA, s.arma).name, e.arma)}${line('Dove', byId(ROOMS, s.stanza).name, e.stanza)}${line('Perché', byId(MOT, s.movente).name, e.movente)}
+        </div>
+        <p class="type" style="font-size:15px;line-height:1.55;margin:10px 0 8px">${esc(verbale(caso, seedV))}</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" data-a="rewrite">Riscrivi il verbale</button><a class="btn" href="./?crea" style="text-decoration:none;color:var(--ink);display:inline-flex;align-items:center">Ora tocca a te: prepara un delitto</a></div>
+      </div>`;
+    }
+
+    const leftS = SUS.filter(p => p.id !== P.vittima && !I.crossed.includes(p.id));
+    const leftW = WEA.filter(w => !I.crossed.includes(w.id)), leftM = MOT.filter(m => !I.crossed.includes(m.id));
+    const opt = (list, sel) => list.map(x => `<option value="${x.id}" ${x.id === sel ? 'selected' : ''}>${esc(x.name)}</option>`).join('');
+    const accHtml = showAccuse ? `<div class="overlay"><div class="paper" style="width:min(560px,100%);padding:22px 26px" role="dialog" aria-labelledby="acc-t">
+      <div id="acc-t" class="type" style="font-size:24px;color:var(--red)">La tua accusa</div>
+      <p style="margin:6px 0 14px">Hai una sola possibilità. Ogni elemento esatto vale 3 punti, ogni azione avanzata 1.</p>
+      <div style="display:grid;gap:10px">
+        <label>Chi <select id="a-chi" style="width:100%;min-height:44px">${opt(SUS.filter(p => p.id !== P.vittima), leftS.length === 1 ? leftS[0].id : '')}</select></label>
+        <label>Con cosa <select id="a-arma" style="width:100%;min-height:44px">${opt(WEA, leftW.length === 1 ? leftW[0].id : '')}</select></label>
+        <label>Dove <select id="a-stanza" style="width:100%;min-height:44px">${opt(ROOMS, '')}</select></label>
+        <label>Perché <select id="a-mot" style="width:100%;min-height:44px">${opt(MOT, leftM.length === 1 ? leftM[0].id : '')}</select></label>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end"><button class="btn" data-a="cancel">Indaga ancora</button><button class="stamp" data-a="confirm" style="font-size:18px;padding:6px 16px">Accusa</button></div>
+    </div></div>` : '';
+
+    $app.innerHTML = `<div class="wrap">
+      <div class="det-head">
+        <div class="paper pin" style="flex:1;min-width:320px;padding:16px 24px;transform:rotate(-.4deg)">
+          <div class="type" style="font-size:28px;letter-spacing:1px">Fascicolo ${esc(code)} · Delitto in Filiale</div>
+          <div style="font-size:16px;margin-top:6px">Il corpo ${V.g === 'f' ? 'della' : 'del'} ${V.role} <b>${V.name}</b> è stato ritrovato all’apertura, nella bussola d’ingresso. Non è lì che è mort${o(V)}.${row.autore ? ' Caso preparato da ' + esc(row.autore) + '.' : ''}</div>
+          <div style="font-size:14px;margin-top:6px;color:var(--muted)">Le tracce fisiche trovate nelle stanze sono dell’assassino, salvo depistaggi. I documenti intestati possono essere segreti di chiunque: contano solo quelli del colpevole.</div>
+        </div>
+        <div style="min-width:190px;background:var(--ink);color:var(--paper);padding:12px 16px;display:flex;flex-direction:column;justify-content:center;box-shadow:var(--shadow)">
+          <div style="font-size:13px;letter-spacing:1px">Azioni rimaste</div><div class="type" style="font-size:44px;line-height:1">${I.actions}<span style="font-size:22px"> / 10</span></div>
+        </div>
+        <button class="stamp" data-a="accuse" ${closed ? 'disabled' : ''} style="min-width:170px;font-size:30px;transform:rotate(2deg)">${closed ? 'Chiuso' : 'Accusa'}</button>
+      </div>
+      <div class="det-grid">
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div class="plan pin" style="padding:16px;box-shadow:var(--shadow);transform:rotate(.6deg)">
+            <div class="type" style="font-size:18px;margin-bottom:10px;color:var(--blue)">Piantina della filiale</div>
+            <div class="rooms">${roomsHtml}</div>
+          </div>
+          <div class="paper" style="padding:16px;transform:rotate(-.5deg);display:flex;flex-direction:column;gap:10px">
+            <div class="type" style="font-size:18px">Strumenti d’indagine</div>${tools}
+            ${reports.map(([t, x]) => `<div style="border-top:1px dashed #6B5A45;padding-top:8px;font-size:14px"><b>${t}:</b> ${esc(x)}</div>`).join('')}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+          <div class="label">Sospetti</div><div class="sus-grid">${sus}</div>
+          <div class="label">Armi</div><div class="card-grid">${wea}</div>
+          <div class="label">Moventi</div><div class="card-grid">${mot}</div>
+          ${closedHtml}
+        </div>
+        <div class="det-right" style="display:flex;flex-direction:column;gap:12px">
+          <div class="label">Indizi raccolti: ${found.length}</div>
+          <div class="clues">${clueHtml}</div>
+        </div>
+      </div></div>${accHtml}`;
+  }
+
+  $app.onclick = async e => {
+    const b = e.target.closest('[data-a]'); if (!b) return;
+    const a = b.dataset.a, id = b.dataset.id;
+    if (a === 'rewrite') { seedV++; return render(); }
+    if (closed) return;
+    if (a === 'search') {
+      if (I.searched.includes(id) || I.actions < 1) return;
+      I.searched.push(id); I.actions -= 1; render(); save();
+    } else if (a === 'tool') {
+      if (id === 'lab') { if (labMode) { labMode = false; return render(); } if (I.actions < 2) return; labMode = true; toast('Scegli il post-it da mandare in laboratorio.'); return render(); }
+      const cost = id === 'autopsy' ? 1 : 2;
+      if (I[id] || I.actions < cost) return;
+      I[id] = true; I.actions -= cost; render(); save();
+    } else if (a === 'labclue') {
+      if (!labMode || I.lab.some(l => l.clueId === id)) return;
+      I.lab.push({ clueId: id }); I.actions -= 2; labMode = false; render(); save();
+    } else if (a === 'cross') {
+      if (id === P.vittima) return;
+      I.crossed = I.crossed.includes(id) ? I.crossed.filter(x => x !== id) : I.crossed.concat([id]); render(); save();
+    } else if (a === 'accuse') { showAccuse = true; render(); }
+    else if (a === 'cancel') { showAccuse = false; render(); }
+    else if (a === 'confirm') {
+      b.disabled = true;
+      accuse({ chi: document.getElementById('a-chi').value, arma: document.getElementById('a-arma').value, stanza: document.getElementById('a-stanza').value, movente: document.getElementById('a-mot').value });
+    }
+  };
+  render();
+}
+</script>
+</body>
+</html>
